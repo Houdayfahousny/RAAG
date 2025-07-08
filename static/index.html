@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat IA (RAG + Llama 3 70B)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            background: #f4f6fb;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 540px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 0 0 16px 0;
+        }
+        h2 {
+            text-align: center;
+            color: #2d3a4b;
+            padding: 24px 0 8px 0;
+            margin: 0;
+        }
+        #chatbox {
+            height: 400px;
+            overflow-y: auto;
+            padding: 24px 16px 8px 16px;
+            border-bottom: 1px solid #e0e6ed;
+            background: #f9fafc;
+        }
+        .bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            margin: 8px 0;
+            border-radius: 18px;
+            font-size: 1rem;
+            line-height: 1.5;
+            word-break: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            position: relative;
+            display: inline-block;
+        }
+        .user {
+            background: #0074D9;
+            color: #fff;
+            align-self: flex-end;
+            margin-left: 20%;
+            border-bottom-right-radius: 4px;
+        }
+        .ia {
+            background: #e6f7e6;
+            color: #2d3a4b;
+            align-self: flex-start;
+            margin-right: 20%;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-row {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 2px;
+        }
+        .chat-row.user {
+            justify-content: flex-end;
+        }
+        .chat-row.ia {
+            justify-content: flex-start;
+        }
+        #input-area {
+            display: flex;
+            padding: 16px;
+            background: #fff;
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.01);
+        }
+        #question {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #d1dbe8;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            margin-right: 8px;
+            transition: border 0.2s;
+        }
+        #question:focus {
+            border: 1.5px solid #0074D9;
+        }
+        #send {
+            padding: 0 24px;
+            background: #0074D9;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #send:active {
+            background: #005fa3;
+        }
+        @media (max-width: 600px) {
+            .container { max-width: 100%; border-radius: 0; }
+            #chatbox { height: 300px; padding: 12px 4px 4px 4px; }
+            #input-area { padding: 8px; }
+        }
+        .loader {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+        }
+        .loader:after {
+            content: ' ';
+            display: block;
+            width: 18px;
+            height: 18px;
+            margin: 2px;
+            border-radius: 50%;
+            border: 3px solid #2ECC40;
+            border-color: #2ECC40 transparent #2ECC40 transparent;
+            animation: loader-spin 1.2s linear infinite;
+        }
+        @keyframes loader-spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Chat IA (RAG + Llama 3 70B)</h2>
+        <div id="chatbox"></div>
+        <form id="input-area" autocomplete="off">
+            <input type="text" id="question" placeholder="Posez votre question..." autocomplete="off" required autofocus>
+            <button type="submit" id="send">Envoyer</button>
+        </form>
+    </div>
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const questionInput = document.getElementById('question');
+        const inputArea = document.getElementById('input-area');
+
+        function appendMessage(sender, text) {
+            const row = document.createElement('div');
+            row.className = 'chat-row ' + sender;
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble ' + sender;
+            bubble.textContent = text;
+            row.appendChild(bubble);
+            chatbox.appendChild(row);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function appendLoader() {
+            const row = document.createElement('div');
+            row.className = 'chat-row ia';
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble ia';
+            bubble.innerHTML = '<span class="loader"></span>';
+            row.appendChild(bubble);
+            chatbox.appendChild(row);
+            chatbox.scrollTop = chatbox.scrollHeight;
+            return row;
+        }
+
+        inputArea.onsubmit = async function(e) {
+            e.preventDefault();
+            const question = questionInput.value.trim();
+            if (!question) return;
+            appendMessage('user', question);
+            questionInput.value = '';
+            questionInput.focus();
+            const loaderRow = appendLoader();
+            try {
+                const resp = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                const data = await resp.json();
+                loaderRow.querySelector('.bubble').textContent = data.answer;
+            } catch (err) {
+                loaderRow.querySelector('.bubble').textContent = "Erreur réseau ou serveur.";
+            }
+        };
+    </script>
+</body>
+</html>
