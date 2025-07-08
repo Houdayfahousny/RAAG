@@ -1,0 +1,18 @@
+# Environnement Python
+venv/
+__pycache__/
+*.pyc
+
+# Données générées
+dataembeddings/
+datatxt/
+datachunks/
+dataEmbed/
+datajson/
+*.npy
+*.json
+faiss.index
+
+# Fichiers temporaires
+*.log
+.DS_Store
